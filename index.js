@@ -1,8 +1,7 @@
-const events = require('events')
-const dequeue = require('dequeue');
+const events = require('events');
 const path = require("path");
-const mm = require("music-metadata");
-const AV = require('av')
+const dequeue = require('dequeue');
+const AV = require('av');
 const validUrl = require('valid-url');
 require('mp3')
 require('flac.js')

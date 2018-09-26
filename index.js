@@ -104,7 +104,7 @@ class Player {
     this._current = this._dequeue.shift()
     let currentLength = null
     this._playing = true
-    if(validUrl.isUri(suspect)){
+    if(validUrl.isUri(this._current)){
       this._playback = AV.Player.fromURL(this._current)
     } else {
       this._playback = AV.Player.fromFile(this._current)

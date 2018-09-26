@@ -10,7 +10,7 @@
   "dependencies": {
     "aac": "0.1.3",
     "alac": "0.1.0",
-    "aurora.js": "TheThingBox/aurora.js#29ae693",
+    "av": "TheThingBox/aurora.js#29ae693",
     "dequeue": "1.0.5",
     "flac.js": "0.2.1",
     "mp3": "0.1.0",

@@ -1,7 +1,7 @@
 const events = require('events');
 const path = require("path");
 const dequeue = require('dequeue');
-const aurora = require('aurora.js');
+const aurora = require('av');
 const validUrl = require('valid-url');
 require('mp3')
 require('flac.js')

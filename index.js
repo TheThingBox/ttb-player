@@ -1,7 +1,7 @@
 const events = require('events');
 const path = require("path");
 const dequeue = require('dequeue');
-const AV = require('av');
+const aurora = require('aurora.js');
 const validUrl = require('valid-url');
 require('mp3')
 require('flac.js')
@@ -14,12 +14,21 @@ const exec = require("ttbd-exec");
 const exec_opt = { hydra_exec_host: "mosquitto" };
 
 
+function isObject(val) {
+  if (val === null) { return false;}
+  return ( (typeof val === 'function') || (typeof val === 'object') );
+}
+
 class Player {
   constructor(params){
     this._playing = false
     this._playback = null
     this._dequeue = new dequeue()
     this._current = null
+    this._exec_opt = exec_opt
+    if(params && isObject(params) && params.hasOwnProperty('exec_opt') && isObject(params.exec_opt)){
+      this._exec_opt = Object.assign({}, exec_opt, params.exec_opt)
+    }
 
     this._emitter = new events.EventEmitter();
     this._defaultDeviceCache = null
@@ -105,9 +114,9 @@ class Player {
     let currentLength = null
     this._playing = true
     if(validUrl.isUri(this._current)){
-      this._playback = AV.Player.fromURL(this._current)
+      this._playback = aurora.Player.fromURL(this._current)
     } else {
-      this._playback = AV.Player.fromFile(this._current)
+      this._playback = aurora.Player.fromFile(this._current)
     }
 
     this._playback.on('ready', () => {
@@ -153,7 +162,7 @@ class Player {
     if(typeof callback !== 'function'){
       callback = function(){}
     }
-    exec(`amixer ${args.join(' ')}`, exec_opt, (err, stdout, stderr) => {
+    exec(`amixer ${args.join(' ')}`, this._exec_opt, (err, stdout, stderr) => {
       callback(err || stderr || null, stdout.trim())
     })
   }
@@ -272,6 +281,10 @@ class Player {
     return ret;
   }
 
+  _isObject(val) {
+    if (val === null) { return false;}
+    return ( (typeof val === 'function') || (typeof val === 'object') );
+  }
 }
 
 Player.INCREMENT_STEP = 5;

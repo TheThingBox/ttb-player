@@ -1,7 +1,4 @@
 const events = require('events')
-// const audio_play = require('audio-play');
-// const audio_load = require('audio-loader')
-// const audio_decode = require('audio-decode')
 const dequeue = require('dequeue');
 const path = require("path");
 const mm = require("music-metadata");
@@ -108,7 +105,12 @@ class Player {
     this._current = this._dequeue.shift()
     let currentLength = null
     this._playing = true
-    this._playback = AV.Player.fromFile(this._current)
+    if(validUrl.isUri(suspect)){
+      this._playback = AV.Player.fromURL(this._current)
+    } else {
+      this._playback = AV.Player.fromFile(this._current)
+    }
+
     this._playback.on('ready', () => {
       this._emitter.emit('next', this._current)
       this._playback.play()
@@ -130,22 +132,6 @@ class Player {
       this._emitter.emit('error', err)
     })
     this._playback.preload()
-    // audio_load(toplay, {decode: audio_decode}).then( (buffer) => {
-    //   this._emitter.emit('next', toplay)
-    //   this._playback = audio_play(buffer, {
-    //     start: 0,
-    //     end: buffer.duration,
-    //     loop: false,
-    //     rate: 1,
-    //     detune: 0,
-    //     autoplay: true
-    //   }, () => {
-    //     this._end(toplay)
-    //   })
-    //   this._playback.play()
-    // }).catch( (err) => {
-    //   this._emitter.emit('error', err)
-    // })
   }
 
   _end(){

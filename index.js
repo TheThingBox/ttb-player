@@ -47,6 +47,9 @@ class Player {
   }
 
   start(music, force){
+    if(!music){
+      return
+    }
     if(force === true){
       this.stop()
     }

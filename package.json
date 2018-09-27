@@ -16,6 +16,7 @@
     "mp3": "0.1.0",
     "ogg.js": "0.1.0",
     "opus.js": "0.1.1",
+    "speaker": "0.4.1",
     "ttbd-exec": "TheThingBox/ttbd-exec#8595423",
     "vorbis.js": "0.1.1",
     "valid-url": "1.0.9"

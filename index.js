@@ -21,17 +21,21 @@ function isObject(val) {
 
 class Player {
   constructor(params){
-    this._playing = false
-    this._playback = null
-    this._dequeue = new dequeue()
-    this._current = null
-    this._exec_opt = exec_opt
+    this._playing = false;
+    this._playback = null;
+    this._dequeue = new dequeue();
+    this._current = null;
+    this._exec_opt = exec_opt;
+    this._currentVolume = null;
+    this._timerCheckVolume = null;
     if(params && isObject(params) && params.hasOwnProperty('exec_opt') && isObject(params.exec_opt)){
-      this._exec_opt = Object.assign({}, exec_opt, params.exec_opt)
+      this._exec_opt = Object.assign({}, exec_opt, params.exec_opt);
     }
 
     this._emitter = new events.EventEmitter();
-    this._defaultDeviceCache = null
+    this._defaultDeviceCache = null;
+    this._defaultDevice();
+    this._checkVolume();
   }
 
   clear(){
@@ -39,7 +43,11 @@ class Player {
     this._emitter.removeAllListeners("end");
     this._emitter.removeAllListeners("next");
     this._emitter.removeAllListeners("progress");
-    this._dequeue.empty()
+    this._emitter.removeAllListeners("volume");
+    this._dequeue.empty();
+    if(this._timerCheckVolume){
+      clearInterval(this._timerCheckVolume)
+    }
   }
 
   on(a, b){
@@ -48,15 +56,15 @@ class Player {
 
   start(music, force){
     if(!music){
-      return
+      return;
     }
     if(force === true){
-      this.stop()
+      this.stop();
     }
-    this._dequeue.push(music)
+    this._dequeue.push(music);
 
     if(this._playing == false || force === true){
-      this._next()
+      this._next();
     }
   }
 
@@ -68,8 +76,8 @@ class Player {
     }
 
     if(this._current){
-      this._emitter.emit('end', this._current)
-      this._current = null
+      this._emitter.emit('end', this._current);
+      this._current = null;
     }
     this._playback = null;
   }
@@ -87,17 +95,21 @@ class Player {
   }
 
   skip(){
-    this._end()
+    this._end();
   }
 
   set volume(newVolume){
-    let volume = Number(newVolume)
+    let volume = Number(newVolume);
     if((volume === 0 || volume) && !isNaN(volume)){
       if(volume < 0) volume = 0;
       if(volume > 100) volume = 100;
-      this._setVolume(volume)
+      this._setVolume(volume);
     }
     return this
+  }
+
+  get volume(){
+    return this._currentVolume
   }
 
   volumeUp(){
@@ -106,6 +118,22 @@ class Player {
 
   volumeDown(){
     this._changeVolume('down')
+  }
+
+  _checkVolume(){
+    this._timerCheckVolume = setInterval( () => {
+      if(this._playing){
+        this._getVolume( (err, vol) => {
+          if(!err){
+            this._currentVolume = vol;
+            this._emitter.emit('volume', vol);
+          }
+          if(this._playing){
+            this._checkVolume()
+          }
+        })
+      }
+    }, 5000)
   }
 
   _next(){
@@ -179,12 +207,17 @@ class Player {
         if(err) {
           callback(err);
         } else {
-          var res = this.REGEX.defaultDevice.exec(data);
+          var res = Player.REGEX.defaultDevice.exec(data);
           if(res === null) {
             callback(new Error('Alsa Mixer Error: failed to parse output'));
           } else {
             this._defaultDeviceCache = res[1];
             callback(null, this._defaultDeviceCache);
+            this._getVolume( (err, vol) => {
+              if(!err){
+                this._currentVolume = vol
+              }
+            })
           }
         }
       });
@@ -205,7 +238,7 @@ class Player {
           if(err2) {
             callback(err2);
           } else {
-            var res = this.REGEX.info.exec(data);
+            var res = Player.REGEX.info.exec(data);
             if(res === null) {
               callback(new Error('Alsa Mixer Error: failed to parse output'));
             } else {
@@ -243,6 +276,12 @@ class Player {
       } else {
         this._amixer(['set', dev, val + '%'], (err2) => {
           callback(err2);
+          this._getVolume( (err, vol) => {
+            if(!err){
+              this._currentVolume = vol;
+              this._emitter.emit('volume', vol);
+            }
+          })
         });
       }
     });
@@ -258,9 +297,9 @@ class Player {
       }
       var volume = vol;
       if(type === 'up'){
-        volume = volume + this.INCREMENT_STEP
+        volume = volume + Player.INCREMENT_STEP
       } else if(type === 'down'){
-        volume = volume - this.INCREMENT_STEP
+        volume = volume - Player.INCREMENT_STEP
       }
       if(volume < 0) volume = 0;
       if(volume > 100) volume = 100;
@@ -292,8 +331,8 @@ class Player {
 
 Player.INCREMENT_STEP = 5;
 Player.REGEX = {
-  defaultDevice: /Simple mixer control \'([a-z0-9 -]+)\',[0-9]+/i,
-  info: /[a-z][a-z ]*\: Playback [0-9-]+ \[([0-9]+)\%\] (?:[[0-9\.-]+dB\] )?\[(on|off)\]/i
+  info: /[a-z][a-z ]*\: Playback [0-9-]+ \[([0-9]+)\%\] (?:[[0-9\.-]+dB\] )?\[(on|off)\]/i,
+  defaultDevice: /Simple mixer control \'([a-z0-9 -]+)\',[0-9]+/i
 }
 
 module.exports = {
